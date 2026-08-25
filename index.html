@@ -25,6 +25,8 @@
     --accent-soft: #E7F0EC;
     --darurat: #3B4C7A;     /* dana darurat */
     --darurat-soft: #E9ECF4;
+    --dingin: #A8720A;      /* uang dingin / trading */
+    --dingin-soft: #F5EEDD;
     --neg: #B24C3B;
     --neg-soft: #F7EAE7;
     --radius: 10px;
@@ -79,6 +81,8 @@
   .card.accent .value{ color: var(--accent); }
   .card.darurat{ border-color: var(--darurat); background: var(--darurat-soft); }
   .card.darurat .value{ color: var(--darurat); }
+  .card.dingin{ border-color: var(--dingin); background: var(--dingin-soft); }
+  .card.dingin .value{ color: var(--dingin); }
   .card .sub{ font-size:0.76rem; color:var(--muted); margin-top:4px; }
 
   .section-title{ font-size:0.95rem; font-weight:700; margin: 26px 0 12px; display:flex; align-items:center; justify-content:space-between; }
@@ -96,6 +100,8 @@
   .btn.primary:hover{ background:#255b4c; }
   .btn.darurat{ background: var(--darurat); color:#fff; border-color:var(--darurat); }
   .btn.darurat:hover{ background:#2f3d63; }
+  .btn.dingin{ background: var(--dingin); color:#fff; border-color:var(--dingin); }
+  .btn.dingin:hover{ background:#8a5c08; }
   .btn.danger{ color: var(--neg); border-color: var(--neg-soft); }
   .btn.danger:hover{ background: var(--neg-soft); }
   .btn.ghost{ border-color:transparent; background:none; }
@@ -180,14 +186,22 @@
 </head>
 <body>
 
-<div class="app">
+<div class="app" id="app-root">
   <aside class="sidebar">
     <div class="brand">Management<span>.</span></div>
     <button class="nav-item active" data-view="dashboard">Dashboard</button>
     <button class="nav-item" data-view="transactions">Transaksi</button>
     <button class="nav-item" data-view="emergency">Dana Darurat</button>
+    <button class="nav-item" data-view="coldmoney">Uang Dingin</button>
     <button class="nav-item" data-view="reports">Rekap</button>
-    <div class="sidebar-foot">Data tersimpan lokal di browser ini. Mulai pencatatan: 1 Agustus 2026.</div>
+    <div class="sidebar-foot">
+      Data tersimpan lokal di perangkat ini. Mulai pencatatan: 1 Agustus 2026.
+      <div style="margin-top:10px; display:flex; flex-direction:column; gap:4px;">
+        <a href="#" id="link-export" style="color:var(--accent); text-decoration:none;">⭳ Export Data (backup)</a>
+        <a href="#" id="link-import" style="color:var(--accent); text-decoration:none;">⭱ Import Data</a>
+      </div>
+      <input type="file" id="import-file-input" accept="application/json" style="display:none;">
+    </div>
   </aside>
 
   <main class="main">
@@ -196,6 +210,10 @@
     <section class="view active" id="view-dashboard">
       <h1>Dashboard</h1>
       <p class="subtitle" id="dash-subtitle">Ringkasan kondisi keuangan Anda saat ini.</p>
+
+      <div id="backup-banner" style="display:none; background:#EFF7F3; border:1px solid var(--accent); border-radius:10px; padding:12px 16px; margin-bottom:20px; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div style="font-size:0.82rem; color:var(--accent);" id="backup-banner-text">✓ Data otomatis diamankan hari ini.</div>
+      </div>
 
       <div class="grid">
         <div class="card accent">
@@ -244,6 +262,29 @@
         <div class="card">
           <div class="label">Pakai Dana Darurat</div>
           <div class="value mono" id="card-month-emout">Rp0</div>
+        </div>
+      </div>
+
+      <div class="section-title">
+        Uang Dingin (Trading)
+        <span class="hint"><a href="#" data-view-link="coldmoney" style="color:var(--dingin);">Lihat detail →</a></span>
+      </div>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr);">
+        <div class="card dingin">
+          <div class="label">Saldo Uang Dingin</div>
+          <div class="value mono" id="card-cold-saldo">Rp0</div>
+        </div>
+        <div class="card">
+          <div class="label">Total Setor</div>
+          <div class="value mono" id="card-cold-deposit">Rp0</div>
+        </div>
+        <div class="card">
+          <div class="label">Untung Trading</div>
+          <div class="value mono" id="card-cold-profit">Rp0</div>
+        </div>
+        <div class="card">
+          <div class="label">Rugi Trading</div>
+          <div class="value mono" id="card-cold-loss">Rp0</div>
         </div>
       </div>
 
@@ -314,6 +355,44 @@
       <table>
         <thead><tr><th>Tanggal</th><th>Keterangan</th><th style="text-align:right;">Jumlah</th><th></th></tr></thead>
         <tbody id="em-table-body"></tbody>
+      </table>
+    </section>
+
+    <!-- COLD MONEY (UANG DINGIN / TRADING) -->
+    <section class="view" id="view-coldmoney">
+      <h1>Uang Dingin</h1>
+      <p class="subtitle">Dana dari kerja sampingan untuk diputar trading. Terpisah total dari Dana Harian &amp; Dana Darurat.</p>
+
+      <div class="grid" style="grid-template-columns:repeat(4,1fr);">
+        <div class="card dingin">
+          <div class="label">Saldo Uang Dingin</div>
+          <div class="value mono" id="cold-saldo">Rp0</div>
+        </div>
+        <div class="card">
+          <div class="label">Total Setor</div>
+          <div class="value mono" id="cold-total-deposit">Rp0</div>
+        </div>
+        <div class="card">
+          <div class="label">Total Untung</div>
+          <div class="value mono" id="cold-total-profit">Rp0</div>
+        </div>
+        <div class="card">
+          <div class="label">Total Rugi</div>
+          <div class="value mono" id="cold-total-loss">Rp0</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn dingin" id="btn-cold-deposit">+ Setor Uang Dingin</button>
+        <button class="btn" id="btn-cold-withdraw">− Tarik Uang Dingin</button>
+        <button class="btn primary" id="btn-cold-profit">+ Catat Untung</button>
+        <button class="btn" style="color:var(--neg); border-color:var(--neg-soft);" id="btn-cold-loss">− Catat Rugi</button>
+      </div>
+
+      <div class="section-title">Riwayat Uang Dingin</div>
+      <table>
+        <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th style="text-align:right;">Jumlah</th><th></th></tr></thead>
+        <tbody id="cold-table-body"></tbody>
       </table>
     </section>
 
@@ -398,6 +477,32 @@
     <div class="modal-actions">
       <button class="btn ghost" id="em-cancel">Batal</button>
       <button class="btn darurat" id="em-save">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cold Money Modal (Uang Dingin) -->
+<div class="overlay" id="overlay-cold">
+  <div class="modal">
+    <h2 id="cold-modal-title">Setor Uang Dingin</h2>
+    <p class="modal-sub" id="cold-modal-sub">Uang masuk langsung ke pool Uang Dingin.</p>
+    <input type="hidden" id="cold-id">
+    <input type="hidden" id="cold-type">
+    <div class="field">
+      <label for="cold-amount">Jumlah (Rp)</label>
+      <input type="number" id="cold-amount" min="0" step="1" placeholder="0">
+    </div>
+    <div class="field">
+      <label for="cold-date">Tanggal</label>
+      <input type="date" id="cold-date">
+    </div>
+    <div class="field">
+      <label for="cold-desc">Keterangan</label>
+      <input type="text" id="cold-desc" placeholder="Contoh: Hasil kerja sampingan, Profit trading hari ini">
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cold-cancel">Batal</button>
+      <button class="btn dingin" id="cold-save">Simpan</button>
     </div>
   </div>
 </div>
@@ -498,9 +603,19 @@
     var totalExpense = sumBy(function(t){ return t.type === "expense"; });
     var emergencyIn = sumBy(function(t){ return t.type === "emergency_in"; });
     var emergencyOut = sumBy(function(t){ return t.type === "emergency_out"; });
-    var saldoHarian = totalIncome - totalExpense - emergencyIn + emergencyOut;
+    var coldDeposit = sumBy(function(t){ return t.type === "cold_deposit"; });
+    var coldWithdraw = sumBy(function(t){ return t.type === "cold_withdraw"; });
+    var coldProfit = sumBy(function(t){ return t.type === "cold_profit"; });
+    var coldLoss = sumBy(function(t){ return t.type === "cold_loss"; });
+    var saldoHarian = totalIncome - totalExpense - emergencyIn + emergencyOut - coldDeposit + coldWithdraw;
     var saldoDarurat = emergencyIn - emergencyOut;
-    return { totalIncome:totalIncome, totalExpense:totalExpense, emergencyIn:emergencyIn, emergencyOut:emergencyOut, saldoHarian:saldoHarian, saldoDarurat:saldoDarurat };
+    var saldoDingin = coldDeposit - coldWithdraw + coldProfit - coldLoss;
+    return {
+      totalIncome:totalIncome, totalExpense:totalExpense,
+      emergencyIn:emergencyIn, emergencyOut:emergencyOut,
+      coldDeposit:coldDeposit, coldWithdraw:coldWithdraw, coldProfit:coldProfit, coldLoss:coldLoss,
+      saldoHarian:saldoHarian, saldoDarurat:saldoDarurat, saldoDingin:saldoDingin
+    };
   }
 
   function inRange(t, from, to){
@@ -522,18 +637,34 @@
     var totalExpense = txs.filter(function(t){return t.type==="expense";}).reduce(function(a,t){return a+t.amount;},0);
     var emergencyIn = txs.filter(function(t){return t.type==="emergency_in";}).reduce(function(a,t){return a+t.amount;},0);
     var emergencyOut = txs.filter(function(t){return t.type==="emergency_out";}).reduce(function(a,t){return a+t.amount;},0);
-    return { txs:txs, totalIncome:totalIncome, totalExpense:totalExpense, emergencyIn:emergencyIn, emergencyOut:emergencyOut };
+    var coldDeposit = txs.filter(function(t){return t.type==="cold_deposit";}).reduce(function(a,t){return a+t.amount;},0);
+    var coldWithdraw = txs.filter(function(t){return t.type==="cold_withdraw";}).reduce(function(a,t){return a+t.amount;},0);
+    var coldProfit = txs.filter(function(t){return t.type==="cold_profit";}).reduce(function(a,t){return a+t.amount;},0);
+    var coldLoss = txs.filter(function(t){return t.type==="cold_loss";}).reduce(function(a,t){return a+t.amount;},0);
+    return {
+      txs:txs, totalIncome:totalIncome, totalExpense:totalExpense,
+      emergencyIn:emergencyIn, emergencyOut:emergencyOut,
+      coldDeposit:coldDeposit, coldWithdraw:coldWithdraw, coldProfit:coldProfit, coldLoss:coldLoss
+    };
   }
 
   // ---------- Navigation ----------
   var navItems = document.querySelectorAll(".nav-item");
+  function goToView(viewName){
+    navItems.forEach(function(b){ b.classList.remove("active"); });
+    var target = document.querySelector('.nav-item[data-view="' + viewName + '"]');
+    if(target) target.classList.add("active");
+    document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
+    document.getElementById("view-" + viewName).classList.add("active");
+    renderAll();
+  }
   navItems.forEach(function(btn){
-    btn.addEventListener("click", function(){
-      navItems.forEach(function(b){ b.classList.remove("active"); });
-      btn.classList.add("active");
-      document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
-      document.getElementById("view-" + btn.dataset.view).classList.add("active");
-      renderAll();
+    btn.addEventListener("click", function(){ goToView(btn.dataset.view); });
+  });
+  document.querySelectorAll("[data-view-link]").forEach(function(link){
+    link.addEventListener("click", function(e){
+      e.preventDefault();
+      goToView(link.getAttribute("data-view-link"));
     });
   });
 
@@ -544,6 +675,7 @@
     document.getElementById("card-saldo-darurat").textContent = formatRp(t.saldoDarurat);
     document.getElementById("card-total-in").textContent = formatRp(t.totalIncome);
     document.getElementById("card-total-out").textContent = formatRp(t.totalExpense);
+    renderBackupBanner();
 
     var now = new Date();
     var mr = monthRange(now.getFullYear(), now.getMonth());
@@ -577,7 +709,11 @@
     if(t.type === "income") return {text:"Pemasukan", cls:"amt-in", sign:"+"};
     if(t.type === "expense") return {text:"Pengeluaran", cls:"amt-out", sign:"-"};
     if(t.type === "emergency_in") return {text:"Setor Darurat", cls:"amt-in", sign:"+"};
-    return {text:"Pakai Darurat", cls:"amt-out", sign:"-"};
+    if(t.type === "emergency_out") return {text:"Pakai Darurat", cls:"amt-out", sign:"-"};
+    if(t.type === "cold_deposit") return {text:"Setor Uang Dingin", cls:"amt-in", sign:"+"};
+    if(t.type === "cold_withdraw") return {text:"Tarik Uang Dingin", cls:"amt-out", sign:"-"};
+    if(t.type === "cold_profit") return {text:"Untung Trading", cls:"amt-in", sign:"+"};
+    return {text:"Rugi Trading", cls:"amt-out", sign:"-"};
   }
 
   function txRow(t, withActions, forEmergency){
@@ -672,6 +808,47 @@
     });
   }
 
+  // ---------- Render: Cold Money (Uang Dingin) ----------
+  function renderColdMoney(){
+    var t = totals();
+    var setEl = function(id, val){ var el = document.getElementById(id); if(el) el.textContent = formatRp(val); };
+
+    setEl("cold-saldo", t.saldoDingin);
+    setEl("cold-total-deposit", t.coldDeposit);
+    setEl("cold-total-profit", t.coldProfit);
+    setEl("cold-total-loss", t.coldLoss);
+    setEl("card-cold-saldo", t.saldoDingin);
+    setEl("card-cold-deposit", t.coldDeposit);
+    setEl("card-cold-profit", t.coldProfit);
+    setEl("card-cold-loss", t.coldLoss);
+
+    var list = getTx().filter(function(x){
+      return x.type === "cold_deposit" || x.type === "cold_withdraw" || x.type === "cold_profit" || x.type === "cold_loss";
+    }).slice().sort(sortByDateDesc);
+
+    var body = document.getElementById("cold-table-body");
+    if(!body) return;
+    body.innerHTML = "";
+    if(list.length === 0){
+      body.innerHTML = '<tr><td colspan="5"><div class="empty-state">Belum ada riwayat Uang Dingin.</div></td></tr>';
+      return;
+    }
+    list.forEach(function(t2){
+      var lbl = typeLabel(t2);
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>" + formatDateID(t2.date) + "</td>" +
+        "<td>" + escapeHtml(t2.description || "-") + "</td>" +
+        "<td><span class=\"tag\">" + lbl.text + "</span></td>" +
+        '<td style="text-align:right;" class="mono ' + lbl.cls + '">' + lbl.sign + formatRp(t2.amount).replace("Rp","Rp ") + "</td>" +
+        '<td><div class="row-actions">' +
+          '<button class="btn ghost small" data-edit="' + t2.id + '">Edit</button>' +
+          '<button class="btn ghost small" data-delete="' + t2.id + '" style="color:var(--neg);">Hapus</button>' +
+        '</div></td>';
+      body.appendChild(tr);
+    });
+  }
+
   // ---------- Render: Reports ----------
   var reportPeriod = "daily"; // daily | monthly | yearly
   var reportCursor = new Date(); // reference date for current period
@@ -737,6 +914,10 @@
     cardsHtml += reportCard("Pengeluaran", pt.totalExpense, "");
     cardsHtml += reportCard("Masuk Dana Darurat", pt.emergencyIn, "darurat");
     cardsHtml += reportCard("Pakai Dana Darurat", pt.emergencyOut, "");
+    cardsHtml += reportCard("Setor Uang Dingin", pt.coldDeposit, "dingin");
+    cardsHtml += reportCard("Tarik Uang Dingin", pt.coldWithdraw, "");
+    cardsHtml += reportCard("Untung Trading", pt.coldProfit, "dingin");
+    cardsHtml += reportCard("Rugi Trading", pt.coldLoss, "");
     if(reportPeriod !== "yearly"){
       cardsHtml += reportCard("Selisih (Pemasukan − Pengeluaran)", net, net >= 0 ? "accent" : "");
     }
@@ -905,6 +1086,81 @@
     renderAll();
   });
 
+  // ---------- Modal: Cold Money (Uang Dingin) ----------
+  var overlayCold = document.getElementById("overlay-cold");
+  var COLD_LABELS = {
+    cold_deposit: { title: "Setor Uang Dingin", editTitle: "Edit Setoran", sub: "Uang dipindahkan dari saldo dana harian ke Uang Dingin." },
+    cold_withdraw: { title: "Tarik Uang Dingin", editTitle: "Edit Penarikan", sub: "Uang dipindahkan dari Uang Dingin kembali ke saldo dana harian." },
+    cold_profit: { title: "Catat Untung Trading", editTitle: "Edit Untung", sub: "Menambah saldo Uang Dingin dari hasil trading." },
+    cold_loss: { title: "Catat Rugi Trading", editTitle: "Edit Rugi", sub: "Mengurangi saldo Uang Dingin akibat kerugian trading." }
+  };
+
+  function openColdModal(type, existing){
+    document.getElementById("cold-id").value = existing ? existing.id : "";
+    document.getElementById("cold-type").value = type;
+    document.getElementById("cold-amount").value = existing ? existing.amount : "";
+    document.getElementById("cold-date").value = existing ? existing.date : clampToStart(todayStr());
+    document.getElementById("cold-date").min = APP_START_DATE;
+    document.getElementById("cold-desc").value = existing ? existing.description : "";
+
+    var meta = COLD_LABELS[type];
+    document.getElementById("cold-modal-title").textContent = existing ? meta.editTitle : meta.title;
+    document.getElementById("cold-modal-sub").textContent = meta.sub;
+
+    overlayCold.classList.add("active");
+    document.getElementById("cold-amount").focus();
+  }
+  function closeColdModal(){ overlayCold.classList.remove("active"); }
+
+  document.getElementById("btn-cold-deposit").addEventListener("click", function(){ openColdModal("cold_deposit", null); });
+  document.getElementById("btn-cold-withdraw").addEventListener("click", function(){ openColdModal("cold_withdraw", null); });
+  document.getElementById("btn-cold-profit").addEventListener("click", function(){ openColdModal("cold_profit", null); });
+  document.getElementById("btn-cold-loss").addEventListener("click", function(){ openColdModal("cold_loss", null); });
+  document.getElementById("cold-cancel").addEventListener("click", closeColdModal);
+  overlayCold.addEventListener("click", function(e){ if(e.target === overlayCold) closeColdModal(); });
+
+  document.getElementById("cold-save").addEventListener("click", function(){
+    var id = document.getElementById("cold-id").value;
+    var type = document.getElementById("cold-type").value;
+    var amount = parseFloat(document.getElementById("cold-amount").value);
+    var date = clampToStart(document.getElementById("cold-date").value);
+    var desc = document.getElementById("cold-desc").value.trim();
+
+    if(!amount || amount <= 0){ showToast("Jumlah harus lebih dari 0"); return; }
+    if(!date){ showToast("Tanggal wajib diisi"); return; }
+    if(!desc){ showToast("Keterangan wajib diisi"); return; }
+
+    var already = id ? (state.transactions.find(function(x){return x.id===id;}) || {}).amount || 0 : 0;
+    var t = totals();
+
+    if(type === "cold_deposit"){
+      if(amount > (t.saldoHarian + already)){
+        showToast("Jumlah melebihi saldo dana harian");
+        return;
+      }
+    }else if(type === "cold_withdraw" || type === "cold_loss"){
+      if(amount > (t.saldoDingin + already)){
+        showToast("Jumlah melebihi saldo Uang Dingin");
+        return;
+      }
+    }
+
+    if(id){
+      var tx = state.transactions.find(function(t2){ return t2.id === id; });
+      if(tx){ tx.amount = amount; tx.date = date; tx.description = desc; }
+      showToast("Transaksi diperbarui");
+    }else{
+      state.transactions.push({
+        id: uid(), type: type, amount: amount, date: date,
+        description: desc, category: null, createdAt: Date.now()
+      });
+      showToast("Uang Dingin diperbarui");
+    }
+    saveData();
+    closeColdModal();
+    renderAll();
+  });
+
   // ---------- Edit / Delete (delegated) ----------
   var pendingDeleteId = null;
   var overlayConfirm = document.getElementById("overlay-confirm");
@@ -917,8 +1173,10 @@
       if(!tx) return;
       if(tx.type === "income" || tx.type === "expense"){
         openTxModal(tx.type, tx);
-      }else{
+      }else if(tx.type === "emergency_in" || tx.type === "emergency_out"){
         openEmModal(tx.type, tx);
+      }else{
+        openColdModal(tx.type, tx);
       }
     }
     if(delId){
@@ -966,12 +1224,103 @@
     }
   });
 
+  // ---------- Backup otomatis (diam-diam, tanpa perlu tap) ----------
+  function daysSince(ts){
+    if(!ts) return Infinity;
+    return (Date.now() - ts) / (1000*60*60*24);
+  }
+  function renderBackupBanner(){
+    var banner = document.getElementById("backup-banner");
+    var text = document.getElementById("backup-banner-text");
+    if(!banner) return;
+    var last = state.lastBackupAt;
+    if(last && daysSince(last) < 1){
+      banner.style.display = "flex";
+      text.textContent = "✓ Data otomatis diamankan hari ini ke folder Download.";
+    }else{
+      banner.style.display = "none";
+    }
+  }
+
+  function doExport(silent){
+    try{
+      var payload = JSON.stringify(state, null, 2);
+      var blob = new Blob([payload], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      var d = new Date();
+      var stamp = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+      a.href = url;
+      a.download = "management-backup-" + stamp + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      state.lastBackupAt = Date.now();
+      saveData();
+      renderBackupBanner();
+      if(!silent) showToast("Backup berhasil didownload ke folder Download");
+    }catch(err){
+      console.error(err);
+      if(!silent) showToast("Gagal membuat backup");
+    }
+  }
+
+  // Dipanggil otomatis tiap kali aplikasi dibuka: kalau sudah lewat 1 hari
+  // sejak backup terakhir (atau belum pernah), backup otomatis tanpa perlu tap.
+  function autoBackupIfNeeded(){
+    if(getTx().length === 0) return;
+    var last = state.lastBackupAt;
+    if(!last || daysSince(last) >= 1){
+      doExport(true);
+    }
+  }
+
+  // ---------- Export / Import (backup manual, opsional) ----------
+  document.getElementById("link-export").addEventListener("click", function(e){
+    e.preventDefault();
+    doExport(false);
+  });
+
+  document.getElementById("link-import").addEventListener("click", function(e){
+    e.preventDefault();
+    document.getElementById("import-file-input").click();
+  });
+
+  document.getElementById("import-file-input").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        var parsed = JSON.parse(evt.target.result);
+        if(!parsed || !Array.isArray(parsed.transactions)){
+          showToast("File backup tidak valid");
+          return;
+        }
+        var ok = confirm("Import akan MENIMPA seluruh data yang ada saat ini dengan isi file backup. Lanjutkan?");
+        if(!ok) return;
+        state = parsed;
+        saveData();
+        renderAll();
+        showToast("Data berhasil dipulihkan dari backup");
+      }catch(err){
+        console.error(err);
+        showToast("Gagal membaca file backup");
+      }finally{
+        e.target.value = "";
+      }
+    };
+    reader.readAsText(file);
+  });
+
   // ---------- Init ----------
   function renderAll(){
     populateCategoryFilter();
     renderDashboard();
     renderTransactions();
     renderEmergency();
+    renderColdMoney();
     renderReports();
   }
 
@@ -980,6 +1329,7 @@
   document.getElementById("filter-to").min = APP_START_DATE;
 
   renderAll();
+  autoBackupIfNeeded();
 })();
 </script>
 <script>
