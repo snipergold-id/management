@@ -212,7 +212,7 @@
       <p class="subtitle" id="dash-subtitle">Ringkasan kondisi keuangan Anda saat ini.</p>
 
       <div id="backup-banner" style="display:none; background:#EFF7F3; border:1px solid var(--accent); border-radius:10px; padding:12px 16px; margin-bottom:20px; align-items:center; gap:10px; flex-wrap:wrap;">
-        <div style="font-size:0.82rem; color:var(--accent);" id="backup-banner-text">✓ Data otomatis diamankan hari ini.</div>
+        <div style="font-size:0.82rem; color:var(--accent);" id="backup-banner-text">✓ Data otomatis diamankan minggu ini.</div>
       </div>
 
       <div class="grid">
@@ -1234,9 +1234,9 @@
     var text = document.getElementById("backup-banner-text");
     if(!banner) return;
     var last = state.lastBackupAt;
-    if(last && daysSince(last) < 1){
+    if(last && daysSince(last) < 7){
       banner.style.display = "flex";
-      text.textContent = "✓ Data otomatis diamankan hari ini ke folder Download.";
+      text.textContent = "✓ Data otomatis diamankan minggu ini ke folder Download.";
     }else{
       banner.style.display = "none";
     }
@@ -1271,7 +1271,7 @@
   function autoBackupIfNeeded(){
     if(getTx().length === 0) return;
     var last = state.lastBackupAt;
-    if(!last || daysSince(last) >= 1){
+    if(!last || daysSince(last) >= 7){
       doExport(true);
     }
   }
