@@ -1,6 +1,6 @@
 // Minimal service worker: caches the app shell so it installs as a PWA
 // and keeps working even without an internet connection.
-var CACHE_NAME = "management-cache-v10";
+var CACHE_NAME = "management-cache-v11";
 var FILES_TO_CACHE = [
   "./",
   "./index.html",

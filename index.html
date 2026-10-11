@@ -180,6 +180,8 @@
     font-size:0.82rem; font-weight:600; color:var(--muted); cursor:pointer;
   }
   .period-switch button.active{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .report-custom{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+  .report-custom .field{ margin:0; flex:1 1 150px; }
   .report-nav{ display:flex; align-items:center; gap:14px; margin-bottom:18px; }
   .report-nav .current{ font-weight:700; font-size:1rem; min-width:180px; text-align:center; }
   .report-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
@@ -446,16 +448,22 @@
     <!-- REPORTS -->
     <section class="view" id="view-reports">
       <h1>Rekap Keuangan</h1>
-      <p class="subtitle">Lihat ringkasan berdasarkan periode harian, mingguan, bulanan, atau tahunan.</p>
+      <p class="subtitle">Lihat ringkasan per hari, minggu, bulan, tahun, atau atur rentang tanggal sendiri.</p>
 
       <div class="period-switch">
         <button class="active" data-period="daily">Harian</button>
         <button data-period="weekly">Mingguan</button>
         <button data-period="monthly">Bulanan</button>
         <button data-period="yearly">Tahunan</button>
+        <button data-period="custom">Atur Sendiri</button>
       </div>
 
-      <div class="report-nav">
+      <div class="report-custom" id="report-custom" style="display:none;">
+        <div class="field"><label for="report-from">Dari tanggal</label><input type="date" id="report-from"></div>
+        <div class="field"><label for="report-to">Sampai tanggal</label><input type="date" id="report-to"></div>
+      </div>
+
+      <div class="report-nav" id="report-nav">
         <button class="btn small" id="report-prev">← Sebelumnya</button>
         <div class="current" id="report-current-label"></div>
         <button class="btn small" id="report-next">Berikutnya →</button>
@@ -943,7 +951,7 @@
   }
 
   // ---------- Render: Reports ----------
-  var reportPeriod = "daily"; // daily | weekly | monthly | yearly
+  var reportPeriod = "daily"; // daily | weekly | monthly | yearly | custom
   var reportCategoryFilter = null; // null = semua kategori
   var reportCursor = new Date(); // reference date for current period
 
@@ -953,10 +961,22 @@
       btn.classList.add("active");
       reportPeriod = btn.dataset.period;
       reportCursor = new Date();
+      if(reportPeriod === "custom"){
+        var fromEl = document.getElementById("report-from"), toEl = document.getElementById("report-to");
+        if(!fromEl.value || !toEl.value){
+          var now = new Date();
+          fromEl.value = monthRange(now.getFullYear(), now.getMonth()).from;
+          toEl.value = dstr(now);
+        }
+      }
       renderReports();
     });
   });
 
+  ["report-from","report-to"].forEach(function(id){
+    document.getElementById(id).addEventListener("change", renderReports);
+    document.getElementById(id).addEventListener("input", renderReports);
+  });
   document.getElementById("report-prev").addEventListener("click", function(){
     shiftCursor(-1); renderReports();
   });
@@ -996,7 +1016,18 @@
     var months = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
     var from, to, label;
 
-    if(reportPeriod === "daily"){
+    document.getElementById("report-nav").style.display = (reportPeriod === "custom") ? "none" : "flex";
+    document.getElementById("report-custom").style.display = (reportPeriod === "custom") ? "flex" : "none";
+
+    if(reportPeriod === "custom"){
+      var cf = document.getElementById("report-from").value, ct = document.getElementById("report-to").value;
+      var nowD = new Date();
+      if(!cf) cf = monthRange(nowD.getFullYear(), nowD.getMonth()).from;
+      if(!ct) ct = dstr(nowD);
+      from = cf <= ct ? cf : ct;
+      to = cf <= ct ? ct : cf;
+      label = (from === to) ? formatDateID(from) : formatDateID(from) + " – " + formatDateID(to);
+    }else if(reportPeriod === "daily"){
       var ds = dstr(reportCursor);
       from = ds; to = ds;
       label = formatDateID(ds);
